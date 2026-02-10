@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Parent Dashboard | KryptoKidz</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --kk-primary: #0052cc;
+      --kk-primary-dark: #003d99;
+      --kk-success: #36b37e;
+      --kk-neutral: #6b7280;
+      --kk-soft: rgba(0, 82, 204, 0.08);
+      --kk-glass: rgba(255, 255, 255, 0.72);
+      --kk-glass-border: rgba(255, 255, 255, 0.6);
+    }
+
+    body {
+      background: linear-gradient(180deg, #f3f6fb 0%, #eef3fb 100%);
+      color: #111827;
+    }
+
+    .sidebar {
+      background: #ffffff;
+      border-right: 1px solid #e6ecf5;
+      min-height: 100vh;
+    }
+
+    .sidebar .nav-link {
+      color: #1f2937;
+      border-radius: 10px;
+    }
+
+    .sidebar .nav-link.active,
+    .sidebar .nav-link:hover {
+      background: var(--kk-soft);
+      color: var(--kk-primary-dark);
+    }
+
+    .kk-badge {
+      background: var(--kk-soft);
+      color: var(--kk-primary-dark);
+    }
+
+    .glass-card {
+      background: var(--kk-glass);
+      border: 1px solid var(--kk-glass-border);
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+      backdrop-filter: blur(16px);
+    }
+
+    .btn-primary {
+      background: var(--kk-primary);
+      border-color: var(--kk-primary);
+    }
+
+    .btn-primary:hover {
+      background: var(--kk-primary-dark);
+      border-color: var(--kk-primary-dark);
+    }
+
+    .btn-outline-primary {
+      color: var(--kk-primary);
+      border-color: var(--kk-primary);
+    }
+
+    .btn-outline-primary:hover {
+      background: var(--kk-primary);
+      border-color: var(--kk-primary);
+      color: #ffffff;
+    }
+
+    .text-bg-primary {
+      background: var(--kk-primary) !important;
+    }
+
+    .text-bg-success {
+      background: var(--kk-success) !important;
+    }
+
+    .progress {
+      background: rgba(148, 163, 184, 0.2);
+    }
+
+    .progress-bar {
+      background: var(--kk-primary);
+    }
+
+    .badge-soft-warning {
+      background: rgba(251, 191, 36, 0.2);
+      color: #92400e;
+    }
+
+    .badge-soft-success {
+      background: rgba(54, 179, 126, 0.2);
+      color: #065f46;
+    }
+
+    .badge-soft-info {
+      background: rgba(59, 130, 246, 0.2);
+      color: #1e3a8a;
+    }
+
+    .fade-out {
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    @media (max-width: 991px) {
+      .sidebar {
+        min-height: auto;
+        border-right: none;
+        border-bottom: 1px solid #e6ecf5;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <aside class="col-lg-3 col-xl-2 sidebar px-3 py-4">
+        <div class="d-flex align-items-center gap-2 mb-4">
+          <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+            <i class="bi bi-stars"></i>
+          </div>
+          <div>
+            <div class="fw-bold">KryptoKidz</div>
+            <small class="text-muted">Family Finance</small>
+          </div>
+        </div>
+        <nav class="nav flex-column gap-1">
+          <a class="nav-link active" href="#overview"><i class="bi bi-grid-1x2 me-2"></i>Family Overview</a>
+          <% if (user.role === 'parent') { %>
+            <a class="nav-link" href="#kids"><i class="bi bi-people me-2"></i>Linked Kids</a>
+            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#assignChoreModal"><i class="bi bi-flag me-2"></i>Assigned Goals</a>
+            <a class="nav-link" href="#pending"><i class="bi bi-hourglass-split me-2"></i>Pending Approval</a>
+            <a class="nav-link" href="#approved"><i class="bi bi-check2-circle me-2"></i>Recently Approved</a>
+          <% } else { %>
+            <a class="nav-link" href="#chores"><i class="bi bi-check2-square me-2"></i>My Goals</a>
+          <% } %>
+          <a class="nav-link" href="#savings"><i class="bi bi-piggy-bank me-2"></i>Savings Goal</a>
+          <a class="nav-link" href="#settings"><i class="bi bi-gear me-2"></i>Settings</a>
+        </nav>
+      </aside>
+
+      <main class="col-lg-9 col-xl-10 px-4 px-md-5 py-4">
+    <div id="overview" class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+      <div>
+        <h1 class="h3 fw-bold mb-1">Welcome, <%= user.fullName %></h1>
+        <% if (user.role === 'parent') { %>
+          <p class="text-muted mb-0">Manage your kids and their crypto learning journey.</p>
+        <% } else { %>
+          <p class="text-muted mb-0">Track your chores and earn rewards.</p>
+        <% } %>
+      </div>
+      <% if (user.role === 'parent') { %>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary btn-lg" data-bs-toggle="modal" data-bs-target="#assignChoreModal" <% if (kids.length === 0) { %>disabled<% } %>>
+            Assign Goal
+          </button>
+          <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#addChildModal">
+            Add Child
+          </button>
+        </div>
+      <% } %>
+    </div>
+
+    <% if (user.role === 'parent') { %>
+      <div class="card glass-card border-0 mb-4">
+        <div class="card-body p-4 d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+          <div>
+            <h2 class="h5 fw-semibold mb-1">Family Summary</h2>
+            <p class="text-muted mb-0">Quick snapshot of your household finances.</p>
+          </div>
+          <div class="d-flex flex-wrap gap-3">
+            <a class="px-3 py-2 rounded-3 bg-white border text-decoration-none text-dark" href="<%= wallet && wallet.parentExplorer ? wallet.parentExplorer : '#' %>" target="_blank">
+              <div class="text-muted small">Parent Balance</div>
+              <div class="fw-semibold"><%= wallet ? wallet.parentBalance.toFixed(2) : '0.00' %> XRP</div>
+            </a>
+            <div class="px-3 py-2 rounded-3 bg-white border">
+              <div class="text-muted small">Kids Balance</div>
+              <% if (wallet && wallet.kidsBalances && wallet.kidsBalances.length) { %>
+                <div class="small text-muted mb-1"><%= wallet.kidsBalanceTotal.toFixed(2) %> XRP total</div>
+                <% wallet.kidsBalances.forEach((kid) => { %>
+                  <div class="fw-semibold">
+                    <a class="text-decoration-none text-dark" href="<%= kid.explorer %>" target="_blank">
+                      <%= kid.name %>: <%= kid.balance.toFixed(2) %> XRP
+                    </a>
+                  </div>
+                <% }) %>
+              <% } else { %>
+                <div class="fw-semibold">0.00 XRP</div>
+              <% } %>
+            </div>
+            <div class="px-3 py-2 rounded-3 bg-white border">
+              <div class="text-muted small">Total Family Balance</div>
+              <div class="fw-semibold"><%= wallet ? wallet.totalFamilyBalance.toFixed(2) : '0.00' %> XRP</div>
+            </div>
+            <div class="px-3 py-2 rounded-3 bg-white border">
+              <div class="text-muted small">Chores Pending</div>
+              <div class="fw-semibold"><%= wallet ? wallet.totalPending : pendingChores.length %></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card glass-card border-0 mb-4">
+        <div class="card-body p-4">
+          <h2 class="h5 fw-semibold mb-2">Parent Wallet</h2>
+          <p class="text-muted mb-3">Copy your wallet address or secret for testnet use.</p>
+          <div class="d-flex flex-column flex-md-row gap-3">
+            <button class="btn btn-outline-primary copy-btn" type="button" data-copy="<%= user.xrplAddress %>">Copy Address</button>
+            <button class="btn btn-outline-primary copy-btn" type="button" data-copy="<%= user.xrplSeed %>">Copy Secret</button>
+            <a class="btn btn-outline-primary" target="_blank" href="https://testnet.xrpl.org/accounts/<%= user.xrplAddress %>">View Testnet</a>
+          </div>
+        </div>
+      </div>
+
+      <div id="kids" class="card glass-card border-0 mb-4">
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h5 fw-semibold mb-0">Linked Kids</h2>
+            <span class="badge text-bg-secondary"><%= kids.length %> total</span>
+          </div>
+
+          <% if (kids.length === 0) { %>
+            <div class="text-center py-5">
+              <p class="text-muted mb-3">No kids added yet.</p>
+              <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addChildModal">
+                Add Your First Child
+              </button>
+            </div>
+          <% } else { %>
+            <div class="table-responsive">
+              <table class="table align-middle">
+                <thead>
+                  <tr class="text-muted">
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Age</th>
+                    <th>Card</th>
+                    <th>Crypto Access</th>
+                    <th>Wallet</th>
+                    <th class="text-end">Controls</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% kids.forEach((kid) => { %>
+                    <tr>
+                      <td class="fw-semibold"><%= kid.fullName %></td>
+                      <td><%= kid.email %></td>
+                      <td><%= kid.age %></td>
+                      <td>
+                        <% if (kid.hasCard) { %>
+                          <span class="badge text-bg-success">Enabled</span>
+                        <% } else { %>
+                          <span class="badge text-bg-light">Not yet</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (kid.canUseCrypto) { %>
+                          <span class="badge text-bg-success">Allowed</span>
+                        <% } else { %>
+                          <span class="badge text-bg-warning">Restricted</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <div class="d-flex flex-column gap-2">
+                          <button class="btn btn-sm btn-outline-primary copy-btn" type="button" data-copy="<%= kid.xrplAddress %>">Copy Address</button>
+                          <button class="btn btn-sm btn-outline-primary copy-btn" type="button" data-copy="<%= kid.xrplSeed %>">Copy Secret</button>
+                          <a class="btn btn-sm btn-outline-primary" target="_blank" href="https://testnet.xrpl.org/accounts/<%= kid.xrplAddress %>">View Testnet</a>
+                        </div>
+                      </td>
+                      <td class="text-end">
+                        <form method="POST" action="/cards/kids/<%= kid._id %>/freeze" class="d-flex justify-content-end align-items-center gap-2">
+                          <input type="hidden" name="parentId" value="<%= user._id %>" />
+                          <input type="hidden" name="frozen" value="<%= kid.isCardFrozen ? 'false' : 'true' %>" />
+                          <div class="form-check form-switch d-flex justify-content-end">
+                            <input class="form-check-input" type="checkbox" id="freeze-<%= kid._id %>" <%= kid.isCardFrozen ? 'checked' : '' %> onclick="this.closest('form').submit()">
+                            <label class="form-check-label ms-2 text-muted" for="freeze-<%= kid._id %>">Freeze Card</label>
+                          </div>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <div id="assigned" class="card glass-card border-0 mb-4">
+        <div class="card-body p-4">
+          <h2 class="h5 fw-semibold mb-3">Assigned Goals</h2>
+          <% if (assignedChores.length === 0) { %>
+            <p class="text-muted mb-0">No goals assigned yet.</p>
+          <% } else { %>
+            <div class="row g-3">
+              <% assignedChores.forEach((chore) => { %>
+                <div class="col-md-6 col-lg-4">
+                  <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                      <h3 class="h6 fw-semibold"><%= chore.title %></h3>
+                      <p class="text-muted mb-2">Assigned to <%= chore.kidId.fullName %></p>
+                      <span class="badge rounded-pill badge-soft-info mb-2">Escrow Locked</span>
+                      <p class="mb-3"><strong><%= chore.rewardAmount %> XRP</strong> reward</p>
+                      <form method="POST" action="/chores/<%= chore._id %>/approve">
+                        <input type="hidden" name="parentId" value="<%= user._id %>" />
+                        <button class="btn btn-outline-primary w-100">Release to Child</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <div id="pending" class="card glass-card border-0 mb-4">
+        <div class="card-body p-4">
+          <h2 class="h5 fw-semibold mb-3">Pending Approval</h2>
+          <p class="text-muted mb-3">A goal appears here after the kid clicks “Submit”.</p>
+          <% if (pendingChores.length === 0) { %>
+            <p class="text-muted mb-0">No goals waiting for approval.</p>
+          <% } else { %>
+            <div class="row g-3">
+              <% pendingChores.forEach((chore) => { %>
+                <div class="col-md-6 col-lg-4">
+                  <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                      <h3 class="h6 fw-semibold"><%= chore.title %></h3>
+                      <p class="text-muted mb-2">Assigned to <%= chore.kidId.fullName %></p>
+                      <span class="badge rounded-pill badge-soft-warning mb-2">Pending</span>
+                      <p class="mb-3"><strong><%= chore.rewardAmount %> XRP</strong> reward</p>
+                      <form method="POST" action="/chores/<%= chore._id %>/approve">
+                        <input type="hidden" name="parentId" value="<%= user._id %>" />
+                        <button class="btn btn-primary w-100">Approve & Release</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <div id="approved" class="card glass-card border-0">
+        <div class="card-body p-4">
+          <h2 class="h5 fw-semibold mb-3">Recently Approved</h2>
+          <% if (approvedChores.length === 0) { %>
+            <p class="text-muted mb-0">No approved goals yet.</p>
+          <% } else { %>
+            <div class="row g-3">
+              <% approvedChores.forEach((chore) => { %>
+                <div class="col-md-6 col-lg-4">
+                  <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                      <h3 class="h6 fw-semibold"><%= chore.title %></h3>
+                      <p class="text-muted mb-2">Paid to <%= chore.kidId.fullName %></p>
+                      <span class="badge rounded-pill badge-soft-success mb-2">Approved</span>
+                      <p class="mb-2"><strong><%= chore.rewardAmount %> XRP</strong> reward</p>
+                      <% if (chore.escrowFinishTxHash) { %>
+                        <p class="small text-muted mb-0">XRPL Tx: <%= chore.escrowFinishTxHash %></p>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="card glass-card border-0 mt-4">
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h5 fw-semibold mb-0">Recent Ledger Activity</h2>
+            <span class="badge kk-badge">Testnet</span>
+          </div>
+          <% if (ledgerActivity.length === 0) { %>
+            <p class="text-muted mb-0">No transactions yet.</p>
+          <% } else { %>
+            <ul class="list-group list-group-flush">
+              <% ledgerActivity.forEach((chore) => { %>
+                <li class="list-group-item d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="fw-semibold"><%= chore.title %></div>
+                    <small class="text-muted">Reward: <%= chore.rewardAmount %> XRP</small>
+                  </div>
+                  <% if (chore.escrowFinishTxHash) { %>
+                    <a class="btn btn-sm btn-outline-primary" target="_blank" href="https://test.bithomp.com/explorer/<%= chore.escrowFinishTxHash %>">View Tx</a>
+                  <% } %>
+                </li>
+              <% }) %>
+            </ul>
+          <% } %>
+        </div>
+      </div>
+    <% } else { %>
+      <div class="card glass-card border-0 mb-4">
+        <div class="card-body p-4">
+          <h2 class="h5 fw-semibold mb-2">My Wallet</h2>
+          <p class="text-muted mb-3">Copy your wallet address or secret for testnet use.</p>
+          <div class="d-flex flex-column flex-md-row gap-3">
+            <button class="btn btn-outline-primary copy-btn" type="button" data-copy="<%= user.xrplAddress %>">Copy Address</button>
+            <button class="btn btn-outline-primary copy-btn" type="button" data-copy="<%= user.xrplSeed %>">Copy Secret</button>
+            <a class="btn btn-outline-primary" target="_blank" href="https://testnet.xrpl.org/accounts/<%= user.xrplAddress %>">View Testnet</a>
+          </div>
+        </div>
+      </div>
+
+      <div id="chores" class="card glass-card border-0 mb-4">
+        <div class="card-body p-4">
+          <h2 class="h5 fw-semibold mb-3">My Goals</h2>
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge kk-badge">XP: <%= wallet ? wallet.xpPoints : 0 %></span>
+            <span class="badge text-bg-primary">Level <%= wallet ? wallet.level : 1 %></span>
+            <% if (wallet && wallet.level >= 2) { %>
+              <span class="badge text-bg-success">Level Up!</span>
+            <% } %>
+          </div>
+          <div class="progress mb-4" style="height: 8px;">
+            <% const xpValue = wallet ? wallet.xpPoints : 0; %>
+            <% const xpPercent = Math.min(100, Math.round((xpValue / 50) * 100)); %>
+            <div class="progress-bar" role="progressbar" data-progress="<%= xpPercent %>" style="width: 0;">
+            </div>
+          </div>
+          <% if (assignedChores.length === 0) { %>
+            <p class="text-muted mb-0">No goals assigned yet.</p>
+          <% } else { %>
+            <div class="row g-3">
+              <% assignedChores.forEach((chore) => { %>
+                <div class="col-md-6 col-lg-4">
+                  <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                      <h3 class="h6 fw-semibold"><%= chore.title %></h3>
+                      <p class="text-muted mb-2">From <%= chore.parentId.fullName %></p>
+                      <span class="badge rounded-pill badge-soft-info mb-2">Escrow Locked</span>
+                      <p class="mb-3"><strong><%= chore.rewardAmount %> XRP</strong> reward</p>
+                      <form method="POST" action="/chores/<%= chore._id %>/submit" class="submit-chore-form">
+                        <input type="hidden" name="kidId" value="<%= user._id %>" />
+                        <button class="btn btn-outline-primary w-100">Submit</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="card glass-card border-0">
+        <div class="card-body p-4">
+          <h2 class="h5 fw-semibold mb-3">Rewards Released</h2>
+          <% if (approvedChores.length === 0) { %>
+            <p class="text-muted mb-0">No rewards released yet.</p>
+          <% } else { %>
+            <div class="row g-3">
+              <% approvedChores.forEach((chore) => { %>
+                <div class="col-md-6 col-lg-4">
+                  <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                      <h3 class="h6 fw-semibold"><%= chore.title %></h3>
+                      <p class="text-muted mb-2">Approved by <%= chore.parentId.fullName %></p>
+                      <span class="badge rounded-pill badge-soft-success mb-2">Approved</span>
+                      <p class="mb-2"><strong><%= chore.rewardAmount %> XRP</strong> reward</p>
+                      <% if (chore.escrowFinishTxHash) { %>
+                        <p class="small text-muted mb-0">XRPL Tx: <%= chore.escrowFinishTxHash %></p>
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="card glass-card border-0 mt-4">
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h5 fw-semibold mb-0">Recent Ledger Activity</h2>
+            <span class="badge kk-badge">Testnet</span>
+          </div>
+          <% if (ledgerActivity.length === 0) { %>
+            <p class="text-muted mb-0">No transactions yet.</p>
+          <% } else { %>
+            <ul class="list-group list-group-flush">
+              <% ledgerActivity.forEach((chore) => { %>
+                <li class="list-group-item d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="fw-semibold"><%= chore.title %></div>
+                    <small class="text-muted">Reward: <%= chore.rewardAmount %> XRP</small>
+                  </div>
+                  <% if (chore.escrowFinishTxHash) { %>
+                    <a class="btn btn-sm btn-outline-primary" target="_blank" href="https://test.bithomp.com/explorer/<%= chore.escrowFinishTxHash %>">View Tx</a>
+                  <% } %>
+                </li>
+              <% }) %>
+            </ul>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
+      </main>
+    </div>
+  </div>
+
+  <% if (user.role === 'parent') { %>
+    <div class="modal fade" id="assignChoreModal" tabindex="-1" aria-labelledby="assignChoreModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-semibold" id="assignChoreModalLabel">Assign a Chore</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form method="POST" action="/chores/create" class="needs-validation" novalidate>
+              <input type="hidden" name="parentId" value="<%= user._id %>" />
+              <div class="mb-3">
+                <label for="choreKid" class="form-label">Assign To</label>
+                <select class="form-select" id="choreKid" name="kidId" required>
+                  <option value="" disabled selected>Select a child</option>
+                  <% kids.forEach((kid) => { %>
+                    <option value="<%= kid._id %>"><%= kid.fullName %> (<%= kid.age %>)</option>
+                  <% }) %>
+                </select>
+                <div class="invalid-feedback">Please select a child.</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="choreTitle" class="form-label">Chore Title</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="choreTitle"
+                  name="title"
+                  placeholder="Clean your room"
+                  required
+                />
+                <div class="invalid-feedback">Please enter a chore title.</div>
+              </div>
+
+              <div class="mb-4">
+                <label for="choreReward" class="form-label">Reward Amount (XRP)</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="choreReward"
+                  name="rewardAmount"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="1.5"
+                  required
+                />
+                <div class="invalid-feedback">Please enter a reward amount.</div>
+              </div>
+
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary">Create Chore</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="addChildModal" tabindex="-1" aria-labelledby="addChildModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-semibold" id="addChildModalLabel">Add a Child</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form method="POST" action="/kids/create" class="needs-validation" novalidate>
+              <input type="hidden" name="parentId" value="<%= user._id %>" />
+              <div class="mb-3">
+                <label for="kidName" class="form-label">Child Name</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="kidName"
+                  name="name"
+                  placeholder="Alex Johnson"
+                  required
+                />
+                <div class="invalid-feedback">Please enter the child's name.</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="kidEmail" class="form-label">Child Email</label>
+                <input
+                  type="email"
+                  class="form-control"
+                  id="kidEmail"
+                  name="email"
+                  placeholder="alex@example.com"
+                  required
+                />
+                <div class="invalid-feedback">Please provide a valid email.</div>
+              </div>
+
+              <div class="mb-4">
+                <label for="kidAge" class="form-label">Age</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="kidAge"
+                  name="age"
+                  min="0"
+                  placeholder="12"
+                  required
+                />
+                <div class="invalid-feedback">Please enter a valid age.</div>
+              </div>
+
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary">Create Kid Profile</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <section id="savings" class="mt-4">
+    <div class="card glass-card border-0">
+      <div class="card-body p-4">
+        <h2 class="h5 fw-semibold mb-2">Savings Goal</h2>
+        <p class="text-muted mb-0">Coming soon: set goals and track progress.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="settings" class="mt-4">
+    <div class="card glass-card border-0">
+      <div class="card-body p-4">
+        <h2 class="h5 fw-semibold mb-2">Settings</h2>
+        <p class="text-muted mb-0">Coming soon: manage notifications and security.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="copyToast" class="toast text-bg-dark border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">Copied to clipboard.</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    (() => {
+      'use strict';
+      const forms = document.querySelectorAll('.needs-validation');
+      Array.from(forms).forEach((form) => {
+        form.addEventListener('submit', (event) => {
+          if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+          form.classList.add('was-validated');
+        }, false);
+      });
+    })();
+
+    document.querySelectorAll('.submit-chore-form').forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        const card = form.closest('.card');
+        if (!card) return;
+        event.preventDefault();
+        card.classList.add('fade-out');
+        setTimeout(() => {
+          form.submit();
+        }, 350);
+      });
+    });
+
+    document.querySelectorAll('.progress-bar[data-progress]').forEach((bar) => {
+      const value = bar.getAttribute('data-progress');
+      bar.style.width = `${value}%`;
+    });
+
+    const toastEl = document.getElementById('copyToast');
+    const toast = toastEl ? new bootstrap.Toast(toastEl, { delay: 1500 }) : null;
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const value = button.getAttribute('data-copy');
+        if (!value) return;
+        try {
+          await navigator.clipboard.writeText(value);
+          if (toast) toast.show();
+        } catch (err) {
+          alert('Copy failed. Please copy manually.');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
