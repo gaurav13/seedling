@@ -6,7 +6,8 @@ const walletSchema = new mongoose.Schema(
     learning: { type: Number, default: 0 },
     spending: { type: Number, default: 0 },
     xpPoints: { type: Number, default: 0 },
-    level: { type: Number, default: 1 }
+    level: { type: Number, default: 1 },
+    learningLocked: { type: Boolean, default: true }
   },
   { timestamps: true }
 );

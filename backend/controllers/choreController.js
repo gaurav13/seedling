@@ -2,6 +2,7 @@ const xrpl = require('xrpl');
 const Chore = require('../models/Chore');
 const User = require('../models/User');
 const Wallet = require('../models/Wallet');
+const { decryptSeed } = require('../utils/seedCrypto');
 
 const XRPL_TESTNET_URL = 'wss://s.altnet.rippletest.net:51233';
 
@@ -46,7 +47,7 @@ const createChore = async (req, res) => {
     }
 
     await client.connect();
-    const parentWallet = xrpl.Wallet.fromSeed(req.user.xrplSeed);
+    const parentWallet = xrpl.Wallet.fromSeed(decryptSeed(req.user.xrplSeed));
     await ensureFundedAccount(client, parentWallet);
 
     const escrowTx = {
@@ -144,7 +145,7 @@ const approveChore = async (req, res) => {
     }
 
     await client.connect();
-    const parentWallet = xrpl.Wallet.fromSeed(req.user.xrplSeed);
+    const parentWallet = xrpl.Wallet.fromSeed(decryptSeed(req.user.xrplSeed));
 
     const finishTx = {
       TransactionType: 'EscrowFinish',
@@ -166,6 +167,12 @@ const approveChore = async (req, res) => {
 
     const kidWallet = await Wallet.findOne({ user: chore.kidId });
     if (kidWallet) {
+      const reward = Number(chore.rewardAmount || 0);
+      const spendingAdd = Number((reward * 0.7).toFixed(2));
+      const learningAdd = Number((reward * 0.3).toFixed(2));
+
+      kidWallet.spending += spendingAdd;
+      kidWallet.learning += learningAdd;
       kidWallet.xpPoints += 10;
       if (kidWallet.xpPoints > 50 && kidWallet.level < 2) {
         kidWallet.level = 2;
@@ -174,7 +181,7 @@ const approveChore = async (req, res) => {
     }
 
     if (req.accepts('html')) {
-      return res.redirect(`/kids/dashboard?userId=${req.user._id}`);
+      return res.redirect(`/kids/dashboard?userId=${req.user._id}&notice=reward_split`);
     }
 
     return res.status(200).json({

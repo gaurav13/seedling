@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema(
     fullName: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true },
+    pinHash: { type: String },
     role: { type: String, default: 'parent' },
     parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     age: { type: Number },

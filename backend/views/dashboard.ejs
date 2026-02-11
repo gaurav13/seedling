@@ -154,6 +154,11 @@
 
       <main class="col-lg-9 col-xl-10 px-4 px-md-5 py-4">
     <div id="overview" class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+      <% if (typeof notice !== 'undefined' && notice === 'reward_split') { %>
+        <div class="alert alert-success w-30 mb-0" role="alert">
+          Reward split: 70% added to Spending, 30% to Learning!
+        </div>
+      <% } %>
       <div>
         <h1 class="h3 fw-bold mb-1">Welcome, <%= user.fullName %></h1>
         <% if (user.role === 'parent') { %>
@@ -170,7 +175,10 @@
           <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#addChildModal">
             Add Child
           </button>
+          <a class="btn btn-outline-secondary btn-lg" href="/logout">Logout</a>
         </div>
+      <% } else { %>
+        <a class="btn btn-outline-secondary btn-lg" href="/logout">Logout</a>
       <% } %>
     </div>
 
@@ -219,7 +227,7 @@
           <p class="text-muted mb-3">Copy your wallet address or secret for testnet use.</p>
           <div class="d-flex flex-column flex-md-row gap-3">
             <button class="btn btn-outline-primary copy-btn" type="button" data-copy="<%= user.xrplAddress %>">Copy Address</button>
-            <button class="btn btn-outline-primary copy-btn" type="button" data-copy="<%= user.xrplSeed %>">Copy Secret</button>
+            <button class="btn btn-outline-primary reveal-secret-btn" type="button" data-user-id="<%= user._id %>">Copy Secret</button>
             <a class="btn btn-outline-primary" target="_blank" href="https://testnet.xrpl.org/accounts/<%= user.xrplAddress %>">View Testnet</a>
           </div>
         </div>
@@ -256,7 +264,11 @@
                 <tbody>
                   <% kids.forEach((kid) => { %>
                     <tr>
-                      <td class="fw-semibold"><%= kid.fullName %></td>
+                      <td class="fw-semibold">
+                        <a class="text-primary text-decoration-underline" href="/kids/dashboard?userId=<%= kid._id %>">
+                          <%= kid.fullName %>
+                        </a>
+                      </td>
                       <td><%= kid.email %></td>
                       <td><%= kid.age %></td>
                       <td>
@@ -276,8 +288,18 @@
                       <td>
                         <div class="d-flex flex-column gap-2">
                           <button class="btn btn-sm btn-outline-primary copy-btn" type="button" data-copy="<%= kid.xrplAddress %>">Copy Address</button>
-                          <button class="btn btn-sm btn-outline-primary copy-btn" type="button" data-copy="<%= kid.xrplSeed %>">Copy Secret</button>
+                          <button class="btn btn-sm btn-outline-primary reveal-secret-btn" type="button" data-user-id="<%= kid._id %>">Copy Secret</button>
                           <a class="btn btn-sm btn-outline-primary" target="_blank" href="https://testnet.xrpl.org/accounts/<%= kid.xrplAddress %>">View Testnet</a>
+                          <% const kidWallet = wallet && wallet.kidWallets ? wallet.kidWallets[kid._id] : null; %>
+                          <% if (kidWallet && kidWallet.learningLocked !== false) { %>
+                            <span class="badge rounded-pill badge-soft-warning">Learning Locked</span>
+                            <form method="POST" action="/wallets/<%= kid._id %>/unlock-learning">
+                              <input type="hidden" name="parentId" value="<%= user._id %>" />
+                              <button class="btn btn-sm btn-outline-success w-100">Unlock Learning</button>
+                            </form>
+                          <% } else if (kidWallet) { %>
+                            <span class="badge rounded-pill badge-soft-success">Learning Unlocked</span>
+                          <% } %>
                         </div>
                       </td>
                       <td class="text-end">
@@ -415,8 +437,111 @@
           <p class="text-muted mb-3">Copy your wallet address or secret for testnet use.</p>
           <div class="d-flex flex-column flex-md-row gap-3">
             <button class="btn btn-outline-primary copy-btn" type="button" data-copy="<%= user.xrplAddress %>">Copy Address</button>
-            <button class="btn btn-outline-primary copy-btn" type="button" data-copy="<%= user.xrplSeed %>">Copy Secret</button>
+            <button class="btn btn-outline-primary reveal-secret-btn" type="button" data-user-id="<%= user._id %>">Copy Secret</button>
             <a class="btn btn-outline-primary" target="_blank" href="https://testnet.xrpl.org/accounts/<%= user.xrplAddress %>">View Testnet</a>
+          </div>
+        </div>
+      </div>
+
+      <div id="spending" class="card glass-card border-0 mb-4">
+        <div class="card-body p-4">
+          <h2 class="h5 fw-semibold mb-3">Spending</h2>
+          <p class="text-muted mb-3">
+            Spending Wallet Balance: <strong><%= wallet ? wallet.spending.toFixed(2) : '0.00' %> XRP</strong>
+            <span class="ms-3">Learning Wallet: <strong><%= wallet ? wallet.learning.toFixed(2) : '0.00' %> XRP</strong></span>
+          </p>
+          <% if (wallet && wallet.learningLocked !== false) { %>
+            <span class="badge rounded-pill badge-soft-warning mb-3 d-inline-block">Learning Locked until age 18 or parent approval</span>
+          <% } else { %>
+            <span class="badge rounded-pill badge-soft-success mb-3 d-inline-block">Learning Unlocked</span>
+          <% } %>
+
+          <% if (wallet && wallet.learningLocked === false) { %>
+            <form method="POST" action="/wallets/<%= user._id %>/move-learning" class="mb-4">
+              <input type="hidden" name="userId" value="<%= user._id %>" />
+              <div class="input-group">
+                <span class="input-group-text">XRP</span>
+                <input type="number" name="amount" class="form-control" min="0.01" step="0.01" placeholder="Move from Learning to Spending" required>
+                <button class="btn btn-outline-primary" type="submit">Move Learning → Spending</button>
+              </div>
+              <div class="form-text">Kids can move funds after age 18 or when parent unlocks.</div>
+            </form>
+          <% } %>
+
+          <% if (user.age >= 10 && user.age <= 12) { %>
+            <div class="border rounded-4 p-4 mb-4 bg-white">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                  <div class="fw-semibold">KryptoKidz Virtual Visa</div>
+                  <small class="text-muted">Online purchases only</small>
+                </div>
+                <span class="badge rounded-pill badge-soft-info">Active</span>
+              </div>
+              <div class="mb-3">
+                <div class="text-muted small">Available Balance</div>
+                <div class="fs-5 fw-semibold"><%= wallet ? wallet.spending.toFixed(2) : '0.00' %> XRP</div>
+              </div>
+              <form method="POST" action="/spend/purchase">
+                <input type="hidden" name="kidId" value="<%= user._id %>" />
+                <div class="input-group">
+                  <span class="input-group-text">XRP</span>
+                  <input type="number" name="amount" class="form-control" min="0.01" step="0.01" placeholder="Amount" required>
+                  <button class="btn btn-primary" type="submit">Make Online Purchase</button>
+                </div>
+              </form>
+            </div>
+          <% } %>
+
+          <% if (user.age >= 13) { %>
+            <div class="border rounded-4 p-4 bg-white">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                  <div class="fw-semibold">Send XRP</div>
+                  <small class="text-muted">Transfers from spending wallet</small>
+                </div>
+                <span class="badge rounded-pill badge-soft-success">13+ only</span>
+              </div>
+              <form method="POST" action="/spend/send">
+                <input type="hidden" name="kidId" value="<%= user._id %>" />
+                <div class="mb-3">
+                  <label class="form-label">Destination Address</label>
+                  <input type="text" name="toAddress" class="form-control" placeholder="r..." required>
+                </div>
+                <div class="input-group">
+                  <span class="input-group-text">XRP</span>
+                  <input type="number" name="amount" class="form-control" min="0.01" step="0.01" placeholder="Amount" required>
+                  <button class="btn btn-primary" type="submit">Send XRP</button>
+                </div>
+              </form>
+            </div>
+          <% } %>
+
+          <div class="mt-4">
+            <h3 class="h6 fw-semibold mb-3">Transaction History</h3>
+            <% if (!spendingTransactions || spendingTransactions.length === 0) { %>
+              <p class="text-muted mb-0">No transactions yet.</p>
+            <% } else { %>
+              <ul class="list-group list-group-flush">
+                <% spendingTransactions.forEach((tx) => { %>
+                  <li class="list-group-item d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="fw-semibold text-capitalize"><%= tx.type %></div>
+                      <% if (tx.toAddress) { %>
+                        <small class="text-muted">To: <%= tx.toAddress %></small>
+                      <% } else { %>
+                        <small class="text-muted">Online purchase</small>
+                      <% } %>
+                    </div>
+                    <div class="text-end">
+                      <div class="fw-semibold"><%= tx.amount.toFixed(2) %> XRP</div>
+                      <% if (tx.txHash) { %>
+                        <a class="btn btn-sm btn-outline-primary mt-1" target="_blank" href="https://test.bithomp.com/explorer/<%= tx.txHash %>">View Tx</a>
+                      <% } %>
+                    </div>
+                  </li>
+                <% }) %>
+              </ul>
+            <% } %>
           </div>
         </div>
       </div>
@@ -570,7 +695,7 @@
               </div>
 
               <div class="d-grid">
-                <button type="submit" class="btn btn-primary">Create Chore</button>
+                <button type="submit" class="btn btn-primary">Create Goal</button>
               </div>
             </form>
           </div>
@@ -626,6 +751,20 @@
                   required
                 />
                 <div class="invalid-feedback">Please enter a valid age.</div>
+              </div>
+              <div class="mb-4">
+                <label for="kidPin" class="form-label">4-digit PIN</label>
+                <input
+                  type="password"
+                  class="form-control"
+                  id="kidPin"
+                  name="pin"
+                  inputmode="numeric"
+                  pattern="[0-9]{4}"
+                  placeholder="1234"
+                  required
+                />
+                <div class="invalid-feedback">Please enter a 4-digit PIN.</div>
               </div>
 
               <div class="d-grid">
@@ -706,6 +845,34 @@
         if (!value) return;
         try {
           await navigator.clipboard.writeText(value);
+          if (toast) toast.show();
+        } catch (err) {
+          alert('Copy failed. Please copy manually.');
+        }
+      });
+    });
+
+    document.querySelectorAll('.reveal-secret-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const userId = button.getAttribute('data-user-id');
+        if (!userId) return;
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const requester = params.get('userId') || params.get('parentId');
+          const resp = await fetch(
+            `/wallets/${userId}/secret?userId=${encodeURIComponent(requester || '')}`,
+            { method: 'POST' }
+          );
+          if (!resp.ok) {
+            alert('Unable to reveal secret.');
+            return;
+          }
+          const data = await resp.json();
+          if (!data.secret) {
+            alert('Secret not available.');
+            return;
+          }
+          await navigator.clipboard.writeText(data.secret);
           if (toast) toast.show();
         } catch (err) {
           alert('Copy failed. Please copy manually.');

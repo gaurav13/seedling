@@ -4,6 +4,8 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const Wallet = require('../models/Wallet');
 const Chore = require('../models/Chore');
+const Transaction = require('../models/Transaction');
+const { encryptSeed } = require('../utils/seedCrypto');
 
 const XRPL_TESTNET_URL = 'wss://s.altnet.rippletest.net:51233';
 const XRPL_EXPLORER_BASE = 'https://test.bithomp.com/explorer';
@@ -19,10 +21,14 @@ const getXrpBalanceSafe = async (client, address) => {
 
 const createKidProfile = async (req, res) => {
   try {
-    const { name, email, age } = req.body;
+    const { name, email, age, pin } = req.body;
 
-    if (!name || !email || age === undefined) {
-      return res.status(400).json({ message: 'Kid name, email, and age are required.' });
+    if (!name || !email || age === undefined || !pin) {
+      return res.status(400).json({ message: 'Kid name, email, age, and PIN are required.' });
+    }
+
+    if (!/^[0-9]{4}$/.test(String(pin))) {
+      return res.status(400).json({ message: 'PIN must be exactly 4 digits.' });
     }
 
     const kidAge = Number(age);
@@ -55,6 +61,7 @@ const createKidProfile = async (req, res) => {
     await client.disconnect();
     const randomPassword = crypto.randomBytes(16).toString('hex');
     const hashedPassword = await bcrypt.hash(randomPassword, 10);
+    const pinHash = await bcrypt.hash(String(pin), 10);
 
     const kid = await User.create({
       fullName: name,
@@ -66,7 +73,8 @@ const createKidProfile = async (req, res) => {
       canUseCrypto,
       hasCard,
       xrplAddress: xrplWallet.address,
-      xrplSeed: xrplWallet.seed
+      xrplSeed: encryptSeed(xrplWallet.seed),
+      pinHash
     });
 
     await Wallet.create({
@@ -98,6 +106,7 @@ const renderDashboard = async (req, res) => {
     let approvedChores = [];
     let wallet = null;
     let ledgerActivity = [];
+    let spendingTransactions = [];
 
     if (req.user.role === 'parent') {
       kids = await User.find({ parentId: req.user._id, role: 'kid' }).sort({ createdAt: -1 });
@@ -115,6 +124,14 @@ const renderDashboard = async (req, res) => {
       const parentBalance = await getXrpBalanceSafe(client, req.user.xrplAddress);
       let kidsBalanceTotal = 0;
       const kidsBalances = [];
+      const kidIds = kids.map((kid) => kid._id);
+      const walletDocs = kidIds.length
+        ? await Wallet.find({ user: { $in: kidIds } })
+        : [];
+      const kidWallets = walletDocs.reduce((acc, w) => {
+        acc[String(w.user)] = w;
+        return acc;
+      }, {});
       for (const kid of kids) {
         const balance = await getXrpBalanceSafe(client, kid.xrplAddress);
         kidsBalanceTotal += balance;
@@ -137,6 +154,7 @@ const renderDashboard = async (req, res) => {
         kidsBalances
       };
       ledgerActivity = approvedChores.slice(0, 6);
+      wallet.kidWallets = kidWallets;
     } else if (req.user.role === 'kid') {
       assignedChores = await Chore.find({ kidId: req.user._id, status: 'assigned' })
         .populate('parentId', 'fullName')
@@ -146,6 +164,17 @@ const renderDashboard = async (req, res) => {
         .sort({ createdAt: -1 });
       ledgerActivity = approvedChores.slice(0, 6);
       wallet = await Wallet.findOne({ user: req.user._id });
+      if (wallet && typeof wallet.learningLocked === 'undefined') {
+        wallet.learningLocked = true;
+        await wallet.save();
+      }
+      if (wallet && req.user.age >= 18 && wallet.learningLocked) {
+        wallet.learningLocked = false;
+        await wallet.save();
+      }
+      spendingTransactions = await Transaction.find({ userId: req.user._id })
+        .sort({ createdAt: -1 })
+        .limit(8);
     }
 
     return res.render('dashboard', {
@@ -155,7 +184,9 @@ const renderDashboard = async (req, res) => {
       assignedChores,
       approvedChores,
       wallet,
-      ledgerActivity
+      ledgerActivity,
+      spendingTransactions,
+      notice: req.query.notice || null
     });
   } catch (error) {
     console.error('renderDashboard error:', error.message);

@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const path = require('path');
 const connectDB = require('./db');
@@ -5,6 +7,8 @@ const authRoutes = require('./routes/authRoutes');
 const kidRoutes = require('./routes/kidRoutes');
 const choreRoutes = require('./routes/choreRoutes');
 const cardRoutes = require('./routes/cardRoutes');
+const spendRoutes = require('./routes/spendRoutes');
+const walletRoutes = require('./routes/walletRoutes');
 
 const app = express();
 
@@ -29,10 +33,20 @@ app.get('/login', (req, res) => {
   res.render('login', { error: null });
 });
 
+app.get('/kid-login', (req, res) => {
+  res.render('kid-login', { error: null });
+});
+
+app.get('/logout', (req, res) => {
+  res.redirect('/');
+});
+
 app.use('/auth', authRoutes);
 app.use('/kids', kidRoutes);
 app.use('/chores', choreRoutes);
 app.use('/cards', cardRoutes);
+app.use('/spend', spendRoutes);
+app.use('/wallets', walletRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

@@ -2,6 +2,7 @@ const xrpl = require('xrpl');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Wallet = require('../models/Wallet');
+const { encryptSeed } = require('../utils/seedCrypto');
 
 const registerParent = async (req, res) => {
   try {
@@ -26,7 +27,7 @@ const registerParent = async (req, res) => {
       password: hashedPassword,
       role: 'parent',
       xrplAddress: xrplWallet.address,
-      xrplSeed: xrplWallet.seed
+      xrplSeed: encryptSeed(xrplWallet.seed)
     });
 
     await Wallet.create({
@@ -80,7 +81,45 @@ const loginUser = async (req, res) => {
   }
 };
 
+const loginKid = async (req, res) => {
+  try {
+    const { email, pin } = req.body;
+
+    if (!email || !pin) {
+      if (req.accepts('html')) {
+        return res.status(400).render('kid-login', { error: 'Email and PIN are required.' });
+      }
+      return res.status(400).json({ message: 'Email and PIN are required.' });
+    }
+
+    const kid = await User.findOne({ email: email.toLowerCase(), role: 'kid' });
+    if (!kid || !kid.pinHash) {
+      if (req.accepts('html')) {
+        return res.status(401).render('kid-login', { error: 'Invalid email or PIN.' });
+      }
+      return res.status(401).json({ message: 'Invalid email or PIN.' });
+    }
+
+    const isMatch = await bcrypt.compare(String(pin), kid.pinHash);
+    if (!isMatch) {
+      if (req.accepts('html')) {
+        return res.status(401).render('kid-login', { error: 'Invalid email or PIN.' });
+      }
+      return res.status(401).json({ message: 'Invalid email or PIN.' });
+    }
+
+    return res.redirect(`/kids/dashboard?userId=${kid._id}`);
+  } catch (error) {
+    console.error('loginKid error:', error.message);
+    if (req.accepts('html')) {
+      return res.status(500).render('kid-login', { error: 'Server error. Please try again.' });
+    }
+    return res.status(500).json({ message: 'Server error.' });
+  }
+};
+
 module.exports = {
   registerParent,
-  loginUser
+  loginUser,
+  loginKid
 };
