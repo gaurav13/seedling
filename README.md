@@ -29,10 +29,16 @@ Seedling automates the habit of saving. Every time a child earns a reward for co
 ---
 
 ## 📂 Project Structure
-- `/public`: Static assets (Logo, Styles, Kid-friendly graphics)
-- `/routes`: Application logic and split-reward algorithms
-- `/views`: EJS templates for Parent and Kid Dashboards
-- `/models`: Database schemas for Chores and Wallets
+app.js — Express app bootstrap
+db.js — MongoDB connection
+controllers/ — request handlers (auth, chores, kids, wallets, spending)
+routes/ — Express routes
+models/ — Mongoose schemas (User, Wallet, Chore, Transaction)
+middleware/ — auth/role helpers
+views/ — EJS templates (home, dashboard, login, register, kid‑login)
+public/ — static assets (images like logo/hero)
+utils/ — helpers (seed encryption, etc.)
+.env, package.json, package-lock.json, node_modules/
 
 ---
 
