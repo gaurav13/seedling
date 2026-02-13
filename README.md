@@ -22,7 +22,7 @@ Seedling automates the habit of saving. Every time a child earns a reward for co
 ## 🛠 Tech Stack
 - **Blockchain:** XRP Ledger (XRPL)
 - **Backend:** Node.js, Express.js
-- **Frontend:** EJS, Tailwind CSS
+- **Frontend:** EJS,Bootstrap5
 - **Database:** MongoDB
 - **Security:** AES-256-GCM Encryption
 
