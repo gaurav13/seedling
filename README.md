@@ -44,6 +44,4 @@ Seedling is designed with global standards in mind:
 
 ---
 
-## 🤝 Contact
-**Founder:** [Your Name/Team Name]
-**Project Link:** [Insert GitHub Link Here]
+
